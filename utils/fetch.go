@@ -11,9 +11,7 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
-
 	"radsched/common"
-
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/lambda"
@@ -194,7 +192,6 @@ func GetEdgeToDataCenterRTT() (map[string]map[string]interface{}, error) {
 	return allRTTData, nil
 }
 
-
 func invokeLambdaInRegion(client *lambda.Client, region string)  (map[string]interface{}, error) {
 	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(region))
 	if err != nil {
@@ -260,69 +257,6 @@ type ConsistencyData struct {
 	NumSuccess  int    `json:"num_success"`
 	NumFailure  int    `json:"num_failure"`
 }
-// getConsistencyWeight fetches the consistency weighting for a specific edge and function
-// -1 if error 
-// 0 if or no such edge, function combination or no attempts 
-// otherwise, num success / num attempts
-// func getConsistencyWeight(edge string, function string) (float64, error) {
-// 	serverURL := "http://54.219.54.16/cgi-bin/hit_ratio.py"
-
-// 	resp, err := http.Get(serverURL)
-// 	if err != nil {
-// 		return -1.0, fmt.Errorf("failed to fetch consistency data: %v", err)
-// 	}
-// 	defer resp.Body.Close()
-
-// 	if resp.StatusCode != http.StatusOK {
-// 		return -1.0, fmt.Errorf("server returned error: %d", resp.StatusCode)
-// 	}
-
-// 	body, err := io.ReadAll(resp.Body)
-// 	if err != nil {
-// 		return -1.0, fmt.Errorf("failed to read response body: %v", err)
-// 	}
-
-// 	// Use a nested map to match the JSON structure
-// 	var data map[string]map[string]map[string]interface{}
-// 	err = json.Unmarshal(body, &data)
-// 	log.Println(data)
-// 	if err != nil {
-// 		return -1.0, fmt.Errorf("failed to parse JSON response: %v", err)
-// 	}
-
-// 	// Check if the edge exists
-// 	edgeData, edgeExists := data[edge]
-// 	if !edgeExists {
-// 		return 0.5, nil // No such edge, return 0
-// 	}
-
-	
-// 	// Check if the function exists under this edge
-// 	funcData, funcExists := edgeData[function]
-// 	if !funcExists {
-// 		return 0.5, nil // No such function for this edge, return 0
-// 	}
-
-// 	// Extract num_attempts and num_success safely
-// 	numAttempts, ok := funcData["num_attempts"].(float64) // JSON numbers are float64
-// 	if !ok {
-// 		return 0.5, nil // If num_attempts is missing or not a number, return 0
-// 	}
-
-// 	numFailure, ok := funcData["num_failure"].(float64)
-// 	if !ok {
-// 		return 0.5, nil // If num_success is missing or not a number, return 0
-// 	}
-
-// 	// Compute and return the consistency weighting
-// 	if numAttempts > 0 {
-// 		if (numFailure == 0) {
-// 			return 0.1, nil
-// 		}
-// 		return numFailure / numAttempts, nil
-// 	}
-// 	return 0.5, nil // Function exists, but no attempts were made
-// }
 
 func getConsistencyWeight(edge string, function string) (float64, error) {
 	file, err := os.Open("/Users/yoni_mindel/Desktop/Thesis/radsched/edge_function_consistency.json")
@@ -373,25 +307,21 @@ func FetchHitRatioByFunction() (map[string]FunctionStats, error) {
 
 func FetchHitRatioByFunctionRemote() (map[string]FunctionStats, error) {
 	url := "http://54.219.54.16/cgi-bin/hit_ratio_v2.py"
-	// Make GET request
 	resp, err := http.Get(url)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch data: %v", err)
 	}
 	defer resp.Body.Close()
 
-	// Check if the request was successful
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 
-	// Read response body
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read response body: %v", err)
 	}
 
-	// Parse JSON directly into a map[string]FunctionStats
 	var functionData map[string]FunctionStats
 	err = json.Unmarshal(body, &functionData)
 	if err != nil {
@@ -403,25 +333,21 @@ func FetchHitRatioByFunctionRemote() (map[string]FunctionStats, error) {
 
 func FetchHitRatioByEdgeRemote() (map[string]map[string]FunctionStats, error) {
 	url := "http://54.219.54.16/cgi-bin/hit_ratio.py"
-	// Make GET request
 	resp, err := http.Get(url)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch data: %v", err)
 	}
 	defer resp.Body.Close()
 
-	// Check if the request was successful
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 
-	// Read response body
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read response body: %v", err)
 	}
 
-	// Parse JSON directly into a ma][string]map[string]FunctionStats
 	var edgefunctionData map[string]map[string]FunctionStats
 	err = json.Unmarshal(body, &edgefunctionData)
 	if err != nil {

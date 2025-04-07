@@ -1,18 +1,14 @@
 package cmd
 
 import (
-	// "fmt"
 	"log"
 	"strings"
-
 	"radsched/common"
 	"radsched/utils"
 	"fmt"
-
 	"github.com/spf13/cobra"
 )
 
-// Define the run command
 var RunCmd = &cobra.Command{
 	Use:   "run [function name]",
 	Short: "Run a specific function on the Rad-Sched scheduler",
@@ -25,20 +21,19 @@ var RunCmd = &cobra.Command{
 	},
 }
 
+// Run the function by choosing the optimal execution location
 func RunFunction(functionName string, withWeight bool) (common.ExecutionInfo) {
-	// Fetch function information
+	// fetch function information
 	functions, err := utils.GetFunctionsAsMap()
 	if err != nil {
 		log.Fatalf("Failed to fetch function info: %v", err)
 	}
-
-	// Look for the requested function
 	function, exists := functions[functionName]
 	if (!exists) {
 		log.Fatalf("Function %s is unkown. Please prepare before running", functionName)
 	} 
 
-	// calculation opt location
+	// calculate optimal location
 	var executionInfo common.ExecutionInfo
 	if (withWeight) {
 		executionInfo = utils.RunOptWeightedLatency(function)

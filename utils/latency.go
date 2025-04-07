@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"fmt"
 	"log"
 	"math"
 	"radsched/common"
@@ -10,8 +9,10 @@ import (
 	"math/rand"
 )
 
-var expLocations = []string{"us-west-1", "us-east-1", "us-east-2"}
+// experiment locations
+var expLocations = []string{"us-west-1", "us-east-1", "us-east-2"} 
 
+// Choose and return optimal executiuon location based on latency  
 func RunOptLatency(function common.FunctionInfo) common.ExecutionInfo {
 	// get time from datacenter to edges
 	edges, err := GetEdges()
@@ -26,19 +27,15 @@ func RunOptLatency(function common.FunctionInfo) common.ExecutionInfo {
 		log.Fatalf("Failed to load edge data: %v", err)
 	}
 
-
-	// Calculate optimal edge location
-	// optimal edge node = arg min (clientToEdge + max(functionExecution, edgeToDatacenter))
 	executionTime, err := strconv.ParseFloat(strings.Split(function.ExecutionTime, "m")[0], 64)
 	if (err != nil) {
 		log.Fatalf("Error converting string to float64: %v", err)
 	}
+	datacenterRuntime := locations[function.Datacenter] + executionTime
+	
+	// get optimal node 
 	var optEdge string
 	optEdgeTime := math.MaxFloat64
-
-	datacenterRuntime := locations[function.Datacenter] + executionTime
-	fmt.Println(datacenterRuntime)
-
 	for edge, clientToEdge := range locations {
 		currentEdgeTime := clientToEdge + max(executionTime, edgeToDatacenters[edge])
 		if (currentEdgeTime < optEdgeTime) {
@@ -53,13 +50,14 @@ func RunOptLatency(function common.FunctionInfo) common.ExecutionInfo {
 			ExecutionTime: datacenterRuntime,
 		}
 	}
-
+	
 	return common.ExecutionInfo{
 		OptLocation: optEdge,
 		ExecutionTime: optEdgeTime,
 	}
 }
 
+// Choose and return optimal executiuon location based on latency and consistency
 func RunOptWeightedLatency(function common.FunctionInfo) common.ExecutionInfo {
 	// get time from datacenter to edges
 	edges, err := GetEdges()
@@ -68,7 +66,6 @@ func RunOptWeightedLatency(function common.FunctionInfo) common.ExecutionInfo {
 	}
 	edgeToDatacenters := edges[function.Datacenter]
 	edgeToDatacentersExp := RemoveLocationsExcept(edgeToDatacenters, expLocations)
-	
 
 	// get time from client to all nodes 
 	locations, err := GetLocations()
@@ -77,15 +74,14 @@ func RunOptWeightedLatency(function common.FunctionInfo) common.ExecutionInfo {
 	}
 	locationsExp := RemoveLocationsExcept(locations, expLocations)
 
-
-	// optimal edge node = arg min (clientToEdge + max(functionExecution, edgeToDatacenter))
-	eligibleNodes := make([]common.ExecutionInfo, 0); 
 	executionTime, err := strconv.ParseFloat(strings.Split(function.ExecutionTime, "m")[0], 64)
 	if (err != nil) {
 		log.Fatalf("Error converting string to float64: %v", err)
 	}
-
 	datacenterRuntime := locationsExp[function.Datacenter] + executionTime
+
+	// get eligible nodes
+	eligibleNodes := make([]common.ExecutionInfo, 0); 
 	for edge, clientToEdge := range locationsExp {
 		currentEdgeTime := clientToEdge + max(executionTime, edgeToDatacentersExp[edge])
 		if (currentEdgeTime < datacenterRuntime) {
@@ -103,8 +99,7 @@ func RunOptWeightedLatency(function common.FunctionInfo) common.ExecutionInfo {
 		}
 	}
 
-
-	// With probability epsilon, choose random from eligible nodes
+	// With probability epsilon, choose random from eligible nodes, otherwise compute optimal
 	var optEdge string
 	var optEdgeTime float64
 	weightedLatency := math.MaxFloat64
@@ -119,7 +114,6 @@ func RunOptWeightedLatency(function common.FunctionInfo) common.ExecutionInfo {
 		optEdge = eligibleNodes[randEdge].OptLocation
 		optEdgeTime = eligibleNodes[randEdge].ExecutionTime
 	} else {
-		// Of eligible Nodes, get weighted latency
 		for _, edgeInfo := range eligibleNodes {
 			weighting, err := getConsistencyWeight(edgeInfo.OptLocation, function.FunctionName)
 			if (err != nil) {

@@ -2,13 +2,10 @@ package cmd
 
 import (
 	"log"
-
 	"github.com/spf13/cobra"
-
 	"radsched/utils"
 )
 
-// Define the bootstrap command
 var BootstrapCmd = &cobra.Command{
 	Use:   "bootstrap",
 	Short: "Fetch the most up-to-date function data",
@@ -16,6 +13,8 @@ var BootstrapCmd = &cobra.Command{
 	Run:   bootstrap,
 }
 
+
+// Collects function, latency, and consistency information
 func bootstrap(cmd *cobra.Command, args []string) {
 	// get registered functions
 	functions, err := utils.LoadFunctions()
@@ -48,17 +47,13 @@ func bootstrap(cmd *cobra.Command, args []string) {
 	utils.SaveRTTDataToJSON(data)
 	log.Println("Successfully saved the edge to datacenter RTT data")
 
-	// get and store consistency data - by function
+	// get and store consistency data 
 	if err := utils.UpdateConsistencyByFunction(); err != nil {
 		log.Fatalf("Failed to update global consistency data: %v", err)
 	}
 	log.Println("Updated function-level consistency stats")
-
-	// get and store consistency data - by edge -> function
 	if err := utils.UpdateConsistencyByEdgeFunction(); err != nil {
 		log.Fatalf("Failed to update edge-function consistency data: %v", err)
 	}
 	log.Println("Updated edge-function consistency stats")
-
-	
 }

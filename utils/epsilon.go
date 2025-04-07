@@ -4,15 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"math"
 	"os"
 	"strings"
 )
 
 const (
 	epsilonfile = "epsilon.json"
-	EDS = "EDS" // Exponential Decay Scaling
-	ASA = "ASA" // Adaptive Simulated Annealing 
 	ADAPTIVE = "ADAPTIVE" 
 	SMOOTH = "SMOOTH" 
 )
@@ -20,15 +17,12 @@ const (
 var (
 	epsilonInit = 0.5
 	epsilonMin = 0.1   // Minimum exploration rate
-	epsilonMax = 0.9   // maximum exploration
-	alpha 	   = 0.3 	// learning rate
-	l     	   = 0.005 // Decay rate l 
-	g      	   = 5.0   // Smoothing factor g
+	epsilonMax = 0.9   // Maximum exploration
+	alpha 	   = 0.3   // Learning rate
 )
 
-
+// Get and update epsilon for a given function and adjustment method
 func GetEpsilon(function string, adjustMethod string) (float64, error) {	
-	// get current epsilon
 	epsilonData, err := LoadEpsilon()
 	if (err != nil) {
 		return 0.0, err
@@ -49,7 +43,6 @@ func GetEpsilon(function string, adjustMethod string) (float64, error) {
 		return epsilon0, nil
 	}
 	successRate := float64(functionHitRatio.NumSuccess) / float64(functionHitRatio.NumAttempts)
-	numAttempts := functionHitRatio.NumAttempts
 
 	// adjust epsilon proportionally to ratio and num attempts
 	var epsilonNew float64
@@ -58,22 +51,17 @@ func GetEpsilon(function string, adjustMethod string) (float64, error) {
 		epsilonNew = EpsilonAdjustAdaptive(successRate)
 	case SMOOTH:
 		epsilonNew = EpsilonAdjustAdaptiveSmooth(epsilon0, successRate)
-	case EDS:
-		epsilonNew = EpsilonAdjustEDS(epsilon0, successRate, float64(numAttempts))
-	case ASA:
-		epsilonNew = EpsilonAdjustASA(epsilon0, successRate, numAttempts)
 	default:
 		return 0.0, fmt.Errorf("invalid epsilon adjustment method: %s", adjustMethod)
 	}	
 	
-	// save epsilon 
 	epsilonData[function] = epsilonNew
 	SaveEpsilon(epsilonData)
 
-	// return epsilon
 	return epsilonNew, nil
 }
 
+// Get new epsilon inversely proportional to success rate
 func EpsilonAdjustAdaptive(successRate float64) float64 {
 	epsilonNew := 1 - successRate
 
@@ -87,6 +75,7 @@ func EpsilonAdjustAdaptive(successRate float64) float64 {
 	return epsilonNew
 }
 
+// Update epsilon inversely proportional to success rate with a smoothing factor
 func EpsilonAdjustAdaptiveSmooth(epsilon0 float64, successRate float64) float64 {
 	targetEpsilon := 1 - successRate
 	epsilonNew := epsilon0 + alpha *(targetEpsilon - epsilon0)
@@ -101,33 +90,7 @@ func EpsilonAdjustAdaptiveSmooth(epsilon0 float64, successRate float64) float64 
 	return epsilonNew
 }
 
-func EpsilonAdjustEDS(epsilon0 float64, successRate float64, numAttempts float64) float64 {
-	// epsilonNew := epsilon0 * math.Exp(l * float64(numAttempts)) * (1 - successRate + g)
-	log.Println(successRate)
-	log.Println(numAttempts)
-	epsilonNew := epsilonMin + (epsilonMax - epsilonMin) * math.Exp(-l * (float64(numAttempts) + g * (1 - successRate)))
-
-	// Ensure epsilon does not exceed 1
-	if epsilonNew > epsilonMax {
-		epsilonNew = epsilonMax
-	}
-	if epsilonNew < epsilonMin {
-		return epsilonMin
-	}
-	
-	return epsilonNew
-}
-
-func EpsilonAdjustASA(epsilon0, successRate float64, numAttempts int) float64 {
-	epsilonNew := epsilon0 * math.Exp(-l * float64(numAttempts) * successRate)
-
-	if epsilonNew < epsilonMin {
-		epsilonNew = epsilonMin
-	}
-
-	return epsilonNew
-}
-
+// Fetches epsilon data 
 func LoadEpsilon() (map[string]float64, error) {
 	// If file doesn't exist, return an empty map
 	if _, err := os.Stat(epsilonfile); os.IsNotExist(err) {
@@ -150,7 +113,7 @@ func LoadEpsilon() (map[string]float64, error) {
 	return epsilonData, nil
 }
 
-// Saveepsilon writes the epsilon values back to the JSON file
+// Writes epsilon values to file 
 func SaveEpsilon(epsilonData map[string]float64) error {
 	data, err := json.MarshalIndent(epsilonData, "", "  ")
 	if err != nil {

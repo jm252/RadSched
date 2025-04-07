@@ -8,10 +8,8 @@ import (
 	"net/http"
 	"os"
 	"strings"
-
 	"radsched/common"
 	"radsched/utils" 
-
 	"github.com/spf13/cobra"
 )
 
@@ -23,7 +21,6 @@ type PreparedFunction struct {
 	Date          string `json:"date"`
 }
 
-// Define the prepare command
 var PrepareCmd = &cobra.Command{
 	Use:   "prepare [function name] [function execution time (ms)] [function datacenter]",
 	Short: "Prepare a specific function to be executed on the Rad-Sched scheduler",
@@ -45,7 +42,7 @@ var PrepareCmd = &cobra.Command{
 	},
 }
 
-// Save function to local function_registry.json only if it doesn't exist
+// Registers or updates function in local registry 
 func saveToLocalFunctionRegistry(function common.FunctionInfo) error {
 	functionsMap, err := utils.GetFunctionsAsMap()
 	if err != nil {
@@ -65,7 +62,6 @@ func saveToLocalFunctionRegistry(function common.FunctionInfo) error {
 			}
 		}
 	} else {
-		// Add the new function to the list
 		functionsList = append(functionsList, function)
 		fmt.Printf("Function '%s' added to the local registry.\n", function.FunctionName)
 		log.Println(functionsList)
@@ -86,8 +82,8 @@ func saveToLocalFunctionRegistry(function common.FunctionInfo) error {
 	return nil
 }
 
+// Registers or updates function in Radical registry 
 func registerFunctionWithRadical(function common.FunctionInfo) error {
-	// Marshal the function into JSON format
 	preparedFunction := PreparedFunction{
 		FunctionName: function.FunctionName,
 		ExecutionTime: function.ExecutionTime,
@@ -100,7 +96,6 @@ func registerFunctionWithRadical(function common.FunctionInfo) error {
 		return fmt.Errorf("failed to marshal function data: %v", err)
 	}
 
-	// Send the POST request to the Radical system
 	resp, err := http.Post("http://localhost:8000/register", "application/json", bytes.NewBuffer(functionData))
 	if err != nil {
 		return fmt.Errorf("failed to send request to Radical: %v", err)

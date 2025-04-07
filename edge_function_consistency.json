@@ -1,0 +1,16 @@
+{
+  "us-east-1": {
+    "fn_us-west-1_100": {
+      "num_attempts": 5,
+      "num_success": 0,
+      "num_failure": 5
+    }
+  },
+  "us-east-2": {
+    "fn_us-west-1_100": {
+      "num_attempts": 8,
+      "num_success": 8,
+      "num_failure": 0
+    }
+  }
+}
