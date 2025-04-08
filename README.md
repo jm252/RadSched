@@ -11,7 +11,7 @@
 
 ### 1b. Run Dependencies
 - Radical 
-- Consistency Storage Server 
+- Consistency Storage Server ([see example](https://github.com/jm252/consistency_storage_server))
 
 ### 2. Build 
 ```bash
