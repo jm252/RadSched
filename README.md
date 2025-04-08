@@ -1,6 +1,6 @@
 # RadSched
 
-**RadSched** is a latency optimizing scheduler for the Radical stateful serverless edge computing system. RadSched selects the optimal edge node to invoke a function at on the basis of latency and data consistency. 
+**RadSched** is a latency optimizing scheduler for the Radical stateful serverless edge computing system. RadSched selects the optimal edge node to invoke a function at on the basis of minimizing latency and data inconsistency. 
 
 ## How to Use the System
 
